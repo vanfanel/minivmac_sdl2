@@ -1692,7 +1692,7 @@ LOCALFUNC blnr CreateMainWindow(void)
 	}
 
 	// SDL2 window and renderer creation
-	SDL_DisplayMode info;
+
 
 #if VarFullScreen
 	if (UseFullScreen)
@@ -1701,8 +1701,7 @@ LOCALFUNC blnr CreateMainWindow(void)
 	{
 		// We don't want physical screen mode to be changed in modern displays,
 		// so we pass this _DESKTOP flag.
-		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-
+		SDL_DisplayMode info;
 		SDL_GetCurrentDisplayMode(0, &info);
 		
 		int screen_width  = info.w; 
@@ -1714,6 +1713,8 @@ LOCALFUNC blnr CreateMainWindow(void)
 		dst_rect.h = screen_height;
 		dst_rect.x = (screen_width - dst_rect.w) / 2;
 		dst_rect.y = 0;
+		
+		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 	else {
 		dst_rect.w = vMacScreenWidth;
@@ -1734,6 +1735,7 @@ LOCALFUNC blnr CreateMainWindow(void)
 	src_rect.y = 0;
 
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear"); 
+	SDL_ShowCursor(SDL_DISABLE);
 
 	// Remember: vMacScreenWindow and vMacScreenHigh will be ignored when we use fullscreen.	
 	window = SDL_CreateWindow(
