@@ -1670,7 +1670,7 @@ LOCALFUNC blnr CreateMainWindow(void)
 	// Reminder: 8bpp is active when vMacScreenDepth is 0, defined in CNFGGLOB.h.
 	// So setting a different mask we can do 32bpp or 8bpp using a 32bpp surface, and there will be
 	// no conversion before uploading texture because we are already using a 32bpp texture! Great :)
-	my_surface= SDL_CreateRGBSurface(0, NewWindowWidth, NewWindowHeight, 32,
+	my_surface= SDL_CreateRGBSurface(0, vMacScreenWidth, vMacScreenHeight, 32,
 #if 0 != vMacScreenDepth
 		0,0,0,0
 #else
@@ -1690,9 +1690,6 @@ LOCALFUNC blnr CreateMainWindow(void)
 #endif
 		v = trueblnr;
 	}
-
-	// SDL2 window and renderer creation
-
 
 #if VarFullScreen
 	if (UseFullScreen)
@@ -1739,7 +1736,7 @@ LOCALFUNC blnr CreateMainWindow(void)
 
 	// Remember: vMacScreenWindow and vMacScreenHigh will be ignored when we use fullscreen.	
 	window = SDL_CreateWindow(
-        	"Mini vMac", 0, 0, vMacScreenWidth, vMacScreenHeight, 
+        	"Mini vMac", 0, 0, NewWindowWidth, NewWindowHeight, 
         	flags);
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);
