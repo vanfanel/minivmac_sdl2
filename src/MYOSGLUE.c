@@ -942,7 +942,7 @@ LOCALPROC CheckMouseState(void)
 }
 
 /* --- keyboard input --- */
-#include <SDL2/SDL_keycode.h>
+
 LOCALFUNC int SDLKey2MacKeyCode(SDL_Keycode i)
 {
 	int v = -1;
