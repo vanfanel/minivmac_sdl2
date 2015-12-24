@@ -873,6 +873,8 @@ LOCALFUNC blnr MyMoveMouse(si4b h, si4b v)
 
 /* cursor state */
 
+/* We are not using this one anymore. Using MousePositionNotifyRelative() instead,
+ * to avoid using the SDL_WarpMouseInWindow() "hack" or coordinates scaling. */
 LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
 {
 	blnr ShouldHaveCursorHidden = trueblnr;
@@ -893,12 +895,7 @@ LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
 	} else
 #endif
 	{
-		NewMousePosh /= xMouseScale; 
-		NewMousePosv /= yMouseScale; 
-
-		// I don't think this is needed anymore since we're only receiving scaled coords
-		// that are always within the vmac screen limits.
-		/*if (NewMousePosh < 0) {
+		if (NewMousePosh < 0) {
 			NewMousePosh = 0;
 			ShouldHaveCursorHidden = falseblnr;
 		} else if (NewMousePosh >= vMacScreenWidth) {
@@ -911,14 +908,13 @@ LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
 		} else if (NewMousePosv >= vMacScreenHeight) {
 			NewMousePosv = vMacScreenHeight - 1;
 			ShouldHaveCursorHidden = falseblnr;
-		}*/
+		}
 
 #if VarFullScreen
 		if (UseFullScreen)
 #endif
 #if MayFullScreen
 		{
-
 			ShouldHaveCursorHidden = trueblnr;
 		}
 #endif
@@ -930,6 +926,49 @@ LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
 		*/
 		MyMousePositionSet(NewMousePosh, NewMousePosv);
 	}
+
+	WantCursorHidden = ShouldHaveCursorHidden;
+}
+
+LOCALPROC MousePositionNotifyRelative(int deltah, int deltav)
+{
+	blnr ShouldHaveCursorHidden = trueblnr;
+
+#if EnableMagnify
+	if (UseMagnify) {
+		currMousex = (currMousex + deltah) / MyWindowScale;
+		currMousey = (currMousey + deltav) / MyWindowScale;
+	}
+#endif
+	currMousex += deltah;
+	currMousey += deltav;
+
+	if (currMousex < 0) {
+		currMousex = 0;
+		ShouldHaveCursorHidden = falseblnr;
+	} else if (currMousex >= vMacScreenWidth) {
+		currMousex = vMacScreenWidth - 1;
+		ShouldHaveCursorHidden = falseblnr;
+	}
+	if (currMousey < 0) {
+		currMousey = 0;
+		ShouldHaveCursorHidden = falseblnr;
+	} else if (currMousey >= vMacScreenHeight) {
+		currMousey = vMacScreenHeight - 1;
+		ShouldHaveCursorHidden = falseblnr;
+	}
+
+#if VarFullScreen
+	if (UseFullScreen)
+#endif
+#if MayFullScreen
+	{
+
+		ShouldHaveCursorHidden = trueblnr;
+	}
+#endif
+
+	MyMousePositionSet(currMousex, currMousey);
 
 	WantCursorHidden = ShouldHaveCursorHidden;
 }
@@ -1500,17 +1539,17 @@ LOCALPROC HandleTheEvent(SDL_Event *event)
 			}
 			break;
 		case SDL_MOUSEMOTION:
-			MousePositionNotify(
-				event->motion.x, event->motion.y);
+			MousePositionNotifyRelative(
+				event->motion.xrel, event->motion.yrel);
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 			/* any mouse button, we don't care which */
-			MousePositionNotify(
+			MousePositionNotifyRelative(
 				event->button.x, event->button.y);
 			MyMouseButtonSet(trueblnr);
 			break;
 		case SDL_MOUSEBUTTONUP:
-			MousePositionNotify(
+			MousePositionNotifyRelative(
 				event->button.x, event->button.y);
 			MyMouseButtonSet(falseblnr);
 			break;
@@ -1660,8 +1699,8 @@ LOCALFUNC blnr CreateMainWindow(void)
 #endif
 #if MayFullScreen
 	{
-		// We don't want physical screen mode to be changed in modern displays,
-		// so we pass this _DESKTOP flag.
+		/* We don't want physical screen mode to be changed in modern displays,
+		 * so we pass this _DESKTOP flag. */
 		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 #endif
@@ -1671,11 +1710,11 @@ LOCALFUNC blnr CreateMainWindow(void)
 	ViewHSize = vMacScreenWidth;
 	ViewVSize = vMacScreenHeight;
 
-	// We support 8bpp too: on SDL1.x, we would create a 8bpp surface here using SetVideoMode(),
-	// but now we create a 32bpp surface that WILL be used to render 8bpp graphics using this trick.
-	// Reminder: 8bpp is active when vMacScreenDepth is 0, defined in CNFGGLOB.h.
-	// So setting a different mask we can do 32bpp or 8bpp using a 32bpp surface, and there will be
-	// no conversion before uploading texture because we are already using a 32bpp texture! Great :)
+	/* We support 8bpp too: on SDL1.x, we would create a 8bpp surface here using SetVideoMode(),
+	 * but now we create a 32bpp surface that WILL be used to render 8bpp graphics using this trick.
+	 * Reminder: 8bpp is active when vMacScreenDepth is 0, defined in CNFGGLOB.h.
+	 * So setting a different mask we can do 32bpp or 8bpp using a 32bpp surface, and there will be
+	 * no conversion before uploading texture because we are already using a 32bpp texture.*/
 	my_surface= SDL_CreateRGBSurface(0, vMacScreenWidth, vMacScreenHeight, 32,
 #if 0 != vMacScreenDepth
 		0,0,0,0
@@ -1713,14 +1752,8 @@ LOCALFUNC blnr CreateMainWindow(void)
 		dst_rect.x = (displayWidth - dst_rect.w) / 2;
 		dst_rect.y = 0;
 	
-		// For mouse coordinates correction due to difference bewteen window size and
-		// vmac screen size, as SDL_WarpMouseInWindow() is not working on the Raspberry Pi,
-		// which forces us to set EnableMouseMotion to false.
-		xMouseScale = (float)displayWidth / (float)vMacScreenWidth;
-		yMouseScale = (float)displayHeight / (float)vMacScreenHeight; 
-		
-		// We don't want physical screen mode to be changed in modern displays,
-		// so we pass this _DESKTOP flag.
+		/* We don't want physical screen mode to be changed in modern displays,
+		 * so we pass this _DESKTOP flag. */
 		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 	else {
@@ -1743,8 +1776,9 @@ LOCALFUNC blnr CreateMainWindow(void)
 
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear"); 
 	SDL_ShowCursor(SDL_DISABLE);
+	SDL_SetRelativeMouseMode(SDL_ENABLE);
 
-	// Remember: width and height values will be ignored when we use fullscreen.	
+	/* Remember: width and height values will be ignored when we use fullscreen. */
 	window = SDL_CreateWindow(
         	"Mini vMac", 0, 0, NewWindowWidth, NewWindowHeight, 
         	flags);
@@ -1777,8 +1811,8 @@ LOCALFUNC blnr ReCreateMainWindow(void)
 	UseFullScreen = WantFullScreen;
 #endif
 
-	// First things first, we destroy the window before creating a new one. We're not in SetVideoMode()
-	// land anymore.
+	/* First things first, we destroy the window before creating a new one. 
+	   We're not in SetVideoMode() land anymore. */
 	SDL_DestroyTexture(texture);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);

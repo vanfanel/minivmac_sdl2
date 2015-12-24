@@ -420,6 +420,6 @@ SDL_Rect dst_rect;
 int displayWidth;
 int displayHeight;
 
-// Mouse coordinates scale correction
-float xMouseScale;
-float yMouseScale;
+// For relative mouse movement
+int currMousex;
+int currMousey;
