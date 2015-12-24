@@ -17,7 +17,7 @@
 #define EnableAltKeysMode 0
 #define SwapCommandControl 0
 #define VarFullScreen 1
-#define WantInitFullScreen 0
+#define WantInitFullScreen 1
 #define MayFullScreen 1
 #define MayNotFullScreen 1
 #define WantInitMagnify 0

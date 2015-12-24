@@ -85,7 +85,7 @@ typedef si5b si5r;
 #define IncludePbufs 1
 #define NumPbufs 4
 
-#define EnableMouseMotion 1
+#define EnableMouseMotion 0
 
 #define IncludeHostTextClipExchange 0
 #define EnableAutoSlow 1

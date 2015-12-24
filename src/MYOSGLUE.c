@@ -893,7 +893,12 @@ LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
 	} else
 #endif
 	{
-		if (NewMousePosh < 0) {
+		NewMousePosh /= xMouseScale; 
+		NewMousePosv /= yMouseScale; 
+
+		// I don't think this is needed anymore since we're only receiving scaled coords
+		// that are always within the vmac screen limits.
+		/*if (NewMousePosh < 0) {
 			NewMousePosh = 0;
 			ShouldHaveCursorHidden = falseblnr;
 		} else if (NewMousePosh >= vMacScreenWidth) {
@@ -906,13 +911,14 @@ LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
 		} else if (NewMousePosv >= vMacScreenHeight) {
 			NewMousePosv = vMacScreenHeight - 1;
 			ShouldHaveCursorHidden = falseblnr;
-		}
+		}*/
 
 #if VarFullScreen
 		if (UseFullScreen)
 #endif
 #if MayFullScreen
 		{
+
 			ShouldHaveCursorHidden = trueblnr;
 		}
 #endif
@@ -1696,21 +1702,25 @@ LOCALFUNC blnr CreateMainWindow(void)
 #endif
 #if MayFullScreen
 	{
-		// We don't want physical screen mode to be changed in modern displays,
-		// so we pass this _DESKTOP flag.
 		SDL_DisplayMode info;
 		SDL_GetCurrentDisplayMode(0, &info);
 		
-		int screen_width  = info.w; 
-		int screen_height = info.h;
+		displayWidth  = info.w; 
+		displayHeight = info.h;
 
-		float x_ratio = (float)vMacScreenWidth / (float)vMacScreenHeight;
-
-		dst_rect.w = screen_height * x_ratio;
-		dst_rect.h = screen_height;
-		dst_rect.x = (screen_width - dst_rect.w) / 2;
+		dst_rect.w = displayHeight * ((float)vMacScreenWidth / (float)vMacScreenHeight);
+		dst_rect.h = displayHeight;
+		dst_rect.x = (displayWidth - dst_rect.w) / 2;
 		dst_rect.y = 0;
+	
+		// For mouse coordinates correction due to difference bewteen window size and
+		// vmac screen size, as SDL_WarpMouseInWindow() is not working on the Raspberry Pi,
+		// which forces us to set EnableMouseMotion to false.
+		xMouseScale = (float)displayWidth / (float)vMacScreenWidth;
+		yMouseScale = (float)displayHeight / (float)vMacScreenHeight; 
 		
+		// We don't want physical screen mode to be changed in modern displays,
+		// so we pass this _DESKTOP flag.
 		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 	else {
@@ -1734,7 +1744,7 @@ LOCALFUNC blnr CreateMainWindow(void)
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear"); 
 	SDL_ShowCursor(SDL_DISABLE);
 
-	// Remember: vMacScreenWindow and vMacScreenHigh will be ignored when we use fullscreen.	
+	// Remember: width and height values will be ignored when we use fullscreen.	
 	window = SDL_CreateWindow(
         	"Mini vMac", 0, 0, NewWindowWidth, NewWindowHeight, 
         	flags);
@@ -1745,7 +1755,6 @@ LOCALFUNC blnr CreateMainWindow(void)
                                SDL_PIXELFORMAT_ARGB8888,
                                SDL_TEXTUREACCESS_STREAMING,
                                vMacScreenWidth, vMacScreenHeight);
-	
 
 	return v;
 }

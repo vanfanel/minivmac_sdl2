@@ -415,3 +415,11 @@ SDL_Texture *texture;
 // ratio correction using SDL_RenderCopy()
 SDL_Rect src_rect;
 SDL_Rect dst_rect;
+
+// SDL2 physical screen dimensions
+int displayWidth;
+int displayHeight;
+
+// Mouse coordinates scale correction
+float xMouseScale;
+float yMouseScale;
