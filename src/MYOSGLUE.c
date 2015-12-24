@@ -1544,13 +1544,9 @@ LOCALPROC HandleTheEvent(SDL_Event *event)
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 			/* any mouse button, we don't care which */
-			MousePositionNotifyRelative(
-				event->button.x, event->button.y);
 			MyMouseButtonSet(trueblnr);
 			break;
 		case SDL_MOUSEBUTTONUP:
-			MousePositionNotifyRelative(
-				event->button.x, event->button.y);
 			MyMouseButtonSet(falseblnr);
 			break;
 		case SDL_KEYDOWN:
