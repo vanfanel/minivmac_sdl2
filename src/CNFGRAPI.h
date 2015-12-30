@@ -25,7 +25,7 @@
 #define MyWindowScale 2
 #define WantInitRunInBackground 0
 #define WantInitNotAutoSlow 0
-#define WantInitSpeedValue 2
+#define WantInitSpeedValue 1
 #define NeedRequestInsertDisk 0
 #define NeedDoMoreCommandsMsg 0
 #define NeedDoAboutMsg 0

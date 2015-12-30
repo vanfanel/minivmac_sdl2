@@ -419,11 +419,3 @@ SDL_Rect dst_rect;
 /* SDL2 physical screen dimensions */
 int displayWidth;
 int displayHeight;
-
-/* For relative mouse movement
-int currMousex;
-int currMousey;*/
-
-/* For mouse coordinates scaling */
-float xMouseScale;
-float yMouseScale;

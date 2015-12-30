@@ -873,8 +873,6 @@ LOCALFUNC blnr MyMoveMouse(si4b h, si4b v)
 
 /* cursor state */
 
-/* We are not using this one anymore. Using MousePositionNotifyRelative() instead,
- * to avoid using the SDL_WarpMouseInWindow() "hack" or coordinates scaling. */
 LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
 {
 	blnr ShouldHaveCursorHidden = trueblnr;
@@ -930,89 +928,18 @@ LOCALPROC MousePositionNotify(int NewMousePosh, int NewMousePosv)
 	WantCursorHidden = ShouldHaveCursorHidden;
 }
 
-/*LOCALPROC MousePositionNotifyRelative(int deltah, int deltav)
+LOCALPROC MousePositionNotifyRelative(int deltah, int deltav)
 {
 	blnr ShouldHaveCursorHidden = trueblnr;
 
 #if EnableMagnify
 	if (UseMagnify) {
-		currMousex = (currMousex + deltah) / MyWindowScale;
-		currMousey = (currMousey + deltav) / MyWindowScale;
+		deltah /= MyWindowScale;
+		deltav /= MyWindowScale;
 	}
 #endif
-	currMousex += deltah;
-	currMousey += deltav;
-
-	if (currMousex < 0) {
-		currMousex = 0;
-		ShouldHaveCursorHidden = falseblnr;
-	} else if (currMousex >= vMacScreenWidth) {
-		currMousex = vMacScreenWidth - 1;
-		ShouldHaveCursorHidden = falseblnr;
-	}
-	if (currMousey < 0) {
-		currMousey = 0;
-		ShouldHaveCursorHidden = falseblnr;
-	} else if (currMousey >= vMacScreenHeight) {
-		currMousey = vMacScreenHeight - 1;
-		ShouldHaveCursorHidden = falseblnr;
-	}
-
-#if VarFullScreen
-	if (UseFullScreen)
-#endif
-#if MayFullScreen
-	{
-
-		ShouldHaveCursorHidden = trueblnr;
-	}
-#endif
-
-	MyMousePositionSet(currMousex, currMousey);
-
-	WantCursorHidden = ShouldHaveCursorHidden;
-}*/
-
-LOCALPROC MousePositionNotifyScale(int NewMousePosh, int NewMousePosv)
-{
-	blnr ShouldHaveCursorHidden = trueblnr;
-
-#if EnableMagnify
-	if (UseMagnify) {
-		NewMousePosh /= MyWindowScale;
-		NewMousePosv /= MyWindowScale;
-	}
-#endif
-	/* No need for this if we use coordinate scaling, since we will never 
-	 * transformed coordinates outside the vmav screen limits */
-	/*if (NewMousePosh < 0) {
-		NewMousePosh = 0;
-		ShouldHaveCursorHidden = falseblnr;
-	} else if (NewMousePosh >= vMacScreenWidth) {
-		NewMousePosh = vMacScreenWidth - 1;
-		ShouldHaveCursorHidden = falseblnr;
-	}
-	if (NewMousePosv < 0) {
-		NewMousePosv = 0;
-		ShouldHaveCursorHidden = falseblnr;
-	} else if (NewMousePosv >= vMacScreenHeight) {
-		NewMousePosv = vMacScreenHeight - 1;
-		ShouldHaveCursorHidden = falseblnr;
-	}*/
-
-#if VarFullScreen
-	if (UseFullScreen)
-#endif
-#if MayFullScreen
-	{
-		NewMousePosh /= xMouseScale;
-		NewMousePosv /= yMouseScale;
-
-		ShouldHaveCursorHidden = trueblnr;
-	}
-#endif
-
-	MyMousePositionSet(NewMousePosh, NewMousePosv);
+	MyMousePositionSetDelta(deltah,
+		deltav);
 
 	WantCursorHidden = ShouldHaveCursorHidden;
 }
@@ -1583,8 +1510,8 @@ LOCALPROC HandleTheEvent(SDL_Event *event)
 			}
 			break;
 		case SDL_MOUSEMOTION:
-			MousePositionNotifyScale(
-				event->motion.x, event->motion.y);
+			MousePositionNotifyRelative(
+				event->motion.xrel, event->motion.yrel);
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 			/* any mouse button, we don't care which */
@@ -1792,10 +1719,6 @@ LOCALFUNC blnr CreateMainWindow(void)
 		dst_rect.x = (displayWidth - dst_rect.w) / 2;
 		dst_rect.y = 0;
 
-		/* For mouse coordinates scaling */
-		xMouseScale = (float) displayWidth / (float) vMacScreenWidth;
-		yMouseScale = (float) displayHeight / (float) vMacScreenHeight;
-	
 		/* We don't want physical screen mode to be changed in modern displays,
 		 * so we pass this _DESKTOP flag. */
 		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
@@ -1820,7 +1743,7 @@ LOCALFUNC blnr CreateMainWindow(void)
 
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear"); 
 	SDL_ShowCursor(SDL_DISABLE);
-	//SDL_SetRelativeMouseMode(SDL_ENABLE);
+	SDL_SetRelativeMouseMode(SDL_ENABLE);
 
 	/* Remember: width and height values will be ignored when we use fullscreen. */
 	window = SDL_CreateWindow(
